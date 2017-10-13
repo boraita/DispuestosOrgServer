@@ -1,4 +1,4 @@
-package com.server;
+package com.server.config;
 
 import java.sql.Connection;
 import java.sql.Statement;
@@ -12,13 +12,13 @@ import org.springframework.stereotype.Component;
 import com.server.example.Service;
 
 @Component
-public class JerseyConfig extends ResourceConfig
+public class JerseyConfigServer extends ResourceConfig
 {
 	 @Value("${spring.datasource.url}")
 		private String dbUrl = System.getenv().get("DATABASE_URL");
 
 	 
-    public JerseyConfig()
+    public JerseyConfigServer()
     {
         register(Service.class);
     }
