@@ -2,10 +2,14 @@ package com.server.example;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.sql.DataSource;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -19,11 +23,18 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlRootElement(name = "users")
 @Path("/users")
 public class Service {
     private static Map<Integer, User> DB = new HashMap<>();
+    
+    @Autowired
+    private DataSource dataSource;
+    
 
     @GET
     @Produces("application/json")
@@ -97,5 +108,30 @@ public class Service {
 
         DB.put(user1.getId(), user1);
         DB.put(user2.getId(), user2);
+    }
+    
+	@GET
+    @Path("/db")
+    @Produces("application/json")
+    public String db() {
+    	Map<String, Object> model = new HashMap<>();
+    	
+        try (Connection connection = dataSource.getConnection()) {
+          Statement stmt = connection.createStatement();
+          stmt.executeUpdate("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)");
+          stmt.executeUpdate("INSERT INTO ticks VALUES (now())");
+          ResultSet rs = stmt.executeQuery("SELECT tick FROM ticks");
+
+          ArrayList<String> output = new ArrayList<String>();
+          while (rs.next()) {
+            output.add("Read from DB: " + rs.getTimestamp("tick"));
+          }
+
+          model.put("records", output);
+          return model.toString();
+        } catch (Exception e) {
+          model.put("message", e.getMessage());
+          return model.toString();
+        }
     }
 }

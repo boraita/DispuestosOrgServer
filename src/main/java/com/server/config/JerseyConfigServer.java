@@ -1,50 +1,43 @@
 package com.server.config;
 
-import java.sql.Connection;
-import java.sql.Statement;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-import javax.sql.DataSource;
-
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.server.example.Service;
 
-@Component
+
+@Configuration
 public class JerseyConfigServer extends ResourceConfig
 {
-	 @Value("${spring.datasource.url}")
-		private String dbUrl = System.getenv().get("DATABASE_URL");
-
-	 
+	@Value("${spring.datasource.url}")
+	private String dbUrl;
+	
+	
     public JerseyConfigServer()
     {
         register(Service.class);
     }
     
-   
-	public Statement db(DataSource dataSource) {
-		Statement stmt = null;
-		try (Connection connection = dataSource.getConnection()) {
-			stmt = connection.createStatement();
-			return stmt;
-		} catch (Exception e) {
-			System.console().printf(e.getMessage());
-			return stmt;
-		}
-	}
+    @Bean
+    public BasicDataSource dataSource() throws URISyntaxException {
+        URI dbUri = new URI(dbUrl);
+
+        String username = dbUri.getUserInfo().split(":")[0];
+        String password = dbUri.getUserInfo().split(":")[1];
+        String dbUrl = "jdbc:postgresql://" + dbUri.getHost() + ':' + dbUri.getPort() + dbUri.getPath();
+
+        BasicDataSource basicDataSource = new BasicDataSource();
+        basicDataSource.setUrl(dbUrl);
+        basicDataSource.setUsername(username);
+        basicDataSource.setPassword(password);
+
+        return basicDataSource;
+    }
 	
-//	@Bean
-//	public DataSource dataSource() throws SQLException {
-//		if (dbUrl == null || dbUrl.isEmpty()) {
-//			HikariConfig config = new HikariConfig();
-//			return new HikariDataSource(config);
-//		} else {
-//			HikariConfig config = new HikariConfig();
-//			config.setJdbcUrl(dbUrl);
-//			return new HikariDataSource(config);
-//		}
-//
-//	}
 }
